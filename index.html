@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Card Generator</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="splash" class="screen active">
+        <div class="logo">✨</div>
+        <h1>Card Generator</h1>
+        <p>Создаём рекламные карточки</p>
+        <div class="spinner"></div>
+    </div>
+
+    <div id="home" class="screen">
+        <div class="header">
+            <h2>Привет, <span id="userName">друг</span>! 👋</h2>
+            <p class="credits">У вас <strong id="creditsCount">0</strong> генераций</p>
+        </div>
+
+        <button class="btn-primary" onclick="goToCreate()">✨ Создать карточку</button>
+
+        <div class="grid-2">
+            <button class="btn-secondary" onclick="goToHistory()">📁 Мои карточки</button>
+            <button class="btn-secondary" onclick="goToPricing()">💎 Тарифы</button>
+        </div>
+
+        <div class="referral-box">
+            <h3>🎁 Пригласи друга</h3>
+            <p>Получи <strong>2 карточки</strong> за каждого друга</p>
+            <div class="referral-link">
+                <span id="refCode">...</span>
+                <button onclick="copyReferral()">📋</button>
+            </div>
+            <button class="btn-share" onclick="shareReferral()">🔗 Поделиться</button>
+        </div>
+    </div>
+
+    <div id="create" class="screen">
+        <button class="btn-back" onclick="goBack()">← Назад</button>
+        <h2>Создание карточки</h2>
+
+        <div class="step">
+            <h3>Шаг 1. Фото товара</h3>
+            <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                <p>📷 Загрузить фото</p>
+                <p class="hint">Нажмите для выбора</p>
+            </div>
+            <input type="file" id="fileInput" accept="image/*" hidden onchange="handleFile(event)">
+            <div id="preview" class="preview"></div>
+        </div>
+
+        <div class="step">
+            <h3>Шаг 2. Текст на карточке</h3>
+            <input type="text" id="headline" placeholder="Заголовок * (до 6 слов)" maxlength="40">
+            <input type="text" id="subheadline" placeholder="Подзаголовок (до 12 слов)" maxlength="80">
+            <textarea id="bullets" placeholder="3 преимущества, каждое с новой строки" rows="3" maxlength="200"></textarea>
+            <input type="text" id="cta" placeholder="Кнопка" maxlength="20" value="Купить">
+        </div>
+
+        <div class="step">
+            <h3>Шаг 3. Стиль</h3>
+            <div class="chips" id="toneChips">
+                <button class="chip active" data-tone="premium">🎩 Премиум</button>
+                <button class="chip" data-tone="bold">🔥 Дерзкий</button>
+                <button class="chip" data-tone="warm">☀️ Тёплый</button>
+                <button class="chip" data-tone="minimal">⚡ Минимал</button>
+            </div>
+            <div class="chips" id="formatChips">
+                <button class="chip active" data-format="1:1">1:1 Пост</button>
+                <button class="chip" data-format="9:16">9:16 Сторис</button>
+                <button class="chip" data-format="16:9">16:9 Баннер</button>
+            </div>
+        </div>
+
+        <button class="btn-primary" onclick="generateCard()">✨ Сгенерировать</button>
+        <p class="cost-hint">Спишется 1 генерация</p>
+    </div>
+
+    <div id="generating" class="screen">
+        <div class="loader-content">
+            <h2>Создаём вашу карточку...</h2>
+            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        </div>
+    </div>
+
+    <div id="result" class="screen">
+        <button class="btn-back" onclick="goToHome()">← На главную</button>
+        <h2>Готово! 🎉</h2>
+        <div class="result-preview">
+            <img id="resultImage" src="" alt="Результат">
+        </div>
+        <button class="btn-primary" onclick="downloadResult()">📥 Скачать PNG</button>
+        <button class="btn-secondary" onclick="goToCreate()">🔄 Создать ещё</button>
+        <div class="upsell">
+            <p>Убрать водяной знак?</p>
+            <button class="btn-primary" onclick="goToPricing()">💎 Перейти к тарифам</button>
+        </div>
+    </div>
+
+    <div id="pricing" class="screen">
+        <button class="btn-back" onclick="goBack()">← Назад</button>
+        <h2>Тарифы</h2>
+
+        <div class="pricing-card current">
+            <h3>🆓 Бесплатно</h3>
+            <p>3 карточки с водяным знаком</p>
+            <span class="badge">Текущий</span>
+        </div>
+
+        <div class="pricing-card">
+            <h3>💎 Пакет 10 карточек</h3>
+            <p>Без водяного знака</p>
+            <button class="btn-buy" onclick="openPayment()">Купить</button>
+        </div>
+
+        <div class="pricing-card">
+            <h3>👑 Подписка PRO</h3>
+            <p>Безлимит + брендкит</p>
+            <button class="btn-buy" onclick="openPayment()">Купить</button>
+        </div>
+    </div>
+
+    <div id="paymentModal" class="modal">
+        <div class="modal-content">
+            <h2>Способ оплаты</h2>
+            <button class="payment-method" onclick="openManager('stars')">
+                <span class="icon">⭐</span>
+                <div>
+                    <strong>Telegram Stars</strong>
+                    <small>Связаться с менеджером</small>
+                </div>
+            </button>
+            <button class="payment-method" onclick="openManager('crypto')">
+                <span class="icon">💎</span>
+                <div>
+                    <strong>$ / TON / USDT</strong>
+                    <small>Связаться с менеджером</small>
+                </div>
+            </button>
+            <p class="modal-hint">Откроется чат с <strong>@HarikonNFT</strong></p>
+            <button class="btn-cancel" onclick="closeModal()">Отмена</button>
+        </div>
+    </div>
+
+    <div id="history" class="screen">
+        <button class="btn-back" onclick="goBack()">← Назад</button>
+        <h2>Мои карточки</h2>
+        <div id="historyGrid" class="history-grid"></div>
+        <p id="historyEmpty" class="empty-state" style="display:none;">Пока пусто</p>
+    </div>
+
+    <canvas id="renderCanvas" style="display:none;"></canvas>
+
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
